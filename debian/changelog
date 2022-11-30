@@ -1,3 +1,9 @@
+rtcom-eventlogger (1.5.4) unstable; urgency=low
+
+  * Work around format compilation errors in the tests for now
+
+ -- Merlijn Wajer <merlijn@wizzup.org>  Wed, 30 Nov 2022 20:18:28 +0100
+
 rtcom-eventlogger (1.5.3) unstable; urgency=low
 
   * Support for GROUP BY Events.local_uid in SQL statements
