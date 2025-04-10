@@ -39,7 +39,6 @@
 #include <unistd.h>
 
 #include "canned-data.h"
-#include "fail.h"
 
 #define SERVICE "RTCOM_EL_SERVICE_TEST"
 #define EVENT_TYPE "RTCOM_EL_EVENTTYPE_TEST_ET1"
@@ -193,11 +192,11 @@ START_TEST(test_add_event)
     ev = event_new_full (t);
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     query = rtcom_el_query_new(el);
 
@@ -217,11 +216,11 @@ START_TEST(test_add_event)
                 "group-by", &q_group_by,
                 NULL);
 
-        fail_unless (q_el == el);
-        fail_unless (q_is_caching == FALSE);
-        fail_unless (q_limit == -1);
-        fail_unless (q_offset == 0);
-        fail_unless (q_group_by == RTCOM_EL_QUERY_GROUP_BY_NONE);
+        ck_assert (q_el == el);
+        ck_assert (q_is_caching == FALSE);
+        ck_assert (q_limit == -1);
+        ck_assert (q_offset == 0);
+        ck_assert (q_group_by == RTCOM_EL_QUERY_GROUP_BY_NONE);
     }
 
     if(!rtcom_el_query_prepare(
@@ -229,19 +228,19 @@ START_TEST(test_add_event)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "service-id",
+    ck_assert(rtcom_el_iter_get_values(it, "service-id",
         &service_id, "event-type-id", &event_type_id, NULL));
 
-    fail_unless (rtcom_el_get_service_id(el, SERVICE) == service_id);
-    fail_unless (rtcom_el_get_eventtype_id(el, EVENT_TYPE) == event_type_id);
+    ck_assert (rtcom_el_get_service_id(el, SERVICE) == service_id);
+    ck_assert (rtcom_el_get_eventtype_id(el, EVENT_TYPE) == event_type_id);
 
     /* exercise its GObject properties */
     {
@@ -267,18 +266,18 @@ START_TEST(test_add_event)
                 "atomic", &it_atomic,
                 NULL);
 
-        fail_unless (it_el == el);
-        fail_unless (it_query != NULL);
-        fail_unless (it_db != NULL);
-        fail_unless (it_db == el_db);
-        fail_unless (it_stmt != NULL);
-        fail_unless (it_plugins != NULL);
-        fail_unless (it_atomic == TRUE || it_atomic == FALSE);
+        ck_assert (it_el == el);
+        ck_assert (it_query != NULL);
+        ck_assert (it_db != NULL);
+        ck_assert (it_db == el_db);
+        ck_assert (it_stmt != NULL);
+        ck_assert (it_plugins != NULL);
+        ck_assert (it_atomic == TRUE || it_atomic == FALSE);
 
         g_free (it_sql);
     }
 
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
     values = rtcom_el_iter_get_value_map(
             it,
@@ -297,35 +296,36 @@ START_TEST(test_add_event)
 
     if(!values)
     {
-        fail("Failed to get values.");
+        ck_abort_msg("Failed to get values.");
     }
 
-    rtcom_fail_unless_intcmp(t, ==,
+    ck_assert_int_eq(t,
             g_value_get_int(g_hash_table_lookup(values, "start-time")));
-    rtcom_fail_unless_intcmp(t, ==,
+    ck_assert_int_eq(t,
             g_value_get_int(g_hash_table_lookup(values, "end-time")));
 
-    rtcom_fail_unless_intcmp(FLAGS, ==,
+    ck_assert_int_eq(FLAGS,
             g_value_get_int(g_hash_table_lookup(values, "flags")));
 
-    rtcom_fail_unless_intcmp(BYTES_SENT, ==,
+    ck_assert_int_eq(BYTES_SENT,
             g_value_get_int(g_hash_table_lookup(values, "bytes-sent")));
-    rtcom_fail_unless_intcmp(BYTES_RECEIVED, ==,
+    ck_assert_int_eq(BYTES_RECEIVED,
             g_value_get_int(g_hash_table_lookup(values, "bytes-received")));
-    rtcom_fail_unless_strcmp(LOCAL_UID, ==,
+    ck_assert_str_eq(LOCAL_UID,
             g_value_get_string(g_hash_table_lookup(values, "local-uid")));
-    rtcom_fail_unless_strcmp(LOCAL_NAME, ==,
+    ck_assert_str_eq(LOCAL_NAME,
             g_value_get_string(g_hash_table_lookup(values, "local-name")));
-    rtcom_fail_unless_strcmp(REMOTE_UID, ==,
+    ck_assert_str_eq(REMOTE_UID,
             g_value_get_string(g_hash_table_lookup(values, "remote-uid")));
-    rtcom_fail_unless_strcmp(REMOTE_NAME, ==,
+    ck_assert_str_eq(REMOTE_NAME,
             g_value_get_string(g_hash_table_lookup(values, "remote-name")));
-    rtcom_fail_unless_strcmp(CHANNEL, ==,
+    ck_assert_str_eq(CHANNEL,
             g_value_get_string(g_hash_table_lookup(values, "channel")));
-    rtcom_fail_unless_strcmp(FREE_TEXT, ==,
+    ck_assert_str_eq(FREE_TEXT,
             g_value_get_string(g_hash_table_lookup(values, "free-text")));
 
-    fail_if(rtcom_el_iter_next(it), "Iterator should only return one row");
+    ck_assert_msg(!rtcom_el_iter_next(it),
+                  "Iterator should only return one row");
 
     g_hash_table_destroy(values);
     g_object_unref(it);
@@ -359,16 +359,16 @@ START_TEST(test_add_full)
             g_strdup ("add_full"));
 
     fd = g_file_open_tmp ("attachment1.XXXXXX", &path1, NULL);
-    fail_unless (fd >= 0);
-    fail_unless (path1 != NULL);
+    ck_assert (fd >= 0);
+    ck_assert (path1 != NULL);
     close (fd);
-    fail_unless (g_file_set_contents (path1, "some text\n", -1, NULL));
+    ck_assert (g_file_set_contents (path1, "some text\n", -1, NULL));
 
     fd = g_file_open_tmp ("attachment2.XXXXXX", &path2, NULL);
-    fail_unless (fd >= 0);
-    fail_unless (path2 != NULL);
+    ck_assert (fd >= 0);
+    ck_assert (path2 != NULL);
     close (fd);
-    fail_unless (g_file_set_contents (path2, "other text\n", -1, NULL));
+    ck_assert (g_file_set_contents (path2, "other text\n", -1, NULL));
 
     attachments = g_list_prepend (attachments,
             rtcom_el_attachment_new (path1, "some file"));
@@ -376,12 +376,12 @@ START_TEST(test_add_full)
             rtcom_el_attachment_new (path2, NULL));
 
     ev = event_new_full (time);
-    fail_unless (ev != NULL, "Failed to create event.");
+    ck_assert_msg (ev != NULL, "Failed to create event.");
 
     event_id = rtcom_el_add_event_full (el, ev,
             headers, attachments, NULL);
 
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     g_unlink (path1);
     g_unlink (path2);
@@ -394,64 +394,64 @@ START_TEST(test_add_full)
     /* now iterate over the attachments */
 
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL));
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless (it != NULL, "Failed to get iterator");
-    fail_unless (rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless (rtcom_el_iter_get_values (it, HEADER_KEY, &contents, NULL));
-    rtcom_fail_unless_strcmp ("add_full", ==, contents);
+    ck_assert (rtcom_el_iter_get_values (it, HEADER_KEY, &contents, NULL));
+    ck_assert_str_eq ("add_full", contents);
     g_free (contents);
 
     att_it = rtcom_el_iter_get_attachments(it);
-    fail_unless (att_it != NULL, "Failed to get attachment iterator");
+    ck_assert_msg (att_it != NULL, "Failed to get attachment iterator");
 
     g_object_unref (it);
 
-    fail_unless (rtcom_el_attach_iter_first(att_it),
-                 "Failed to start attachment iterator");
+    ck_assert_msg (rtcom_el_attach_iter_first(att_it),
+                   "Failed to start attachment iterator");
 
     att = rtcom_el_attach_iter_get (att_it);
-    fail_if (att == NULL, "failed to get attachment data");
+    ck_assert_msg (att != NULL, "failed to get attachment data");
 
-    fail_unless (event_id == att->event_id,
-                 "attachment event ID doesn't match");
-    rtcom_fail_unless_strcmp (basename1 = g_path_get_basename (path2), ==,
+    ck_assert_msg (event_id == att->event_id,
+                   "attachment event ID doesn't match");
+    ck_assert_str_eq (basename1 = g_path_get_basename (path2),
                               basename2 = g_path_get_basename (att->path));
     g_free(basename1);
     g_free(basename2);
-    rtcom_fail_unless_strcmp (NULL, ==, att->desc);
-    fail_unless (g_file_get_contents (att->path, &contents, &length, NULL));
-    rtcom_fail_unless_uintcmp (length, ==, strlen ("other text\n"));
-    rtcom_fail_unless_strcmp (contents, ==, "other text\n");
+    ck_assert (NULL == att->desc);
+    ck_assert (g_file_get_contents (att->path, &contents, &length, NULL));
+    ck_assert_uint_eq (length, strlen ("other text\n"));
+    ck_assert_str_eq (contents, "other text\n");
     g_free (contents);
     rtcom_el_free_attachment (att);
 
-    fail_unless (rtcom_el_attach_iter_next (att_it),
-                 "Failed to advance attachment iterator");
+    ck_assert_msg (rtcom_el_attach_iter_next (att_it),
+                   "Failed to advance attachment iterator");
 
     att = rtcom_el_attach_iter_get (att_it);
-    fail_if (att == NULL, "failed to get attachment data");
+    ck_assert_msg (att != NULL, "failed to get attachment data");
 
-    fail_unless (event_id == att->event_id,
-                 "attachment event ID doesn't match");
-    rtcom_fail_unless_strcmp (basename1 = g_path_get_basename (path1), ==,
+    ck_assert_msg (event_id == att->event_id,
+                   "attachment event ID doesn't match");
+    ck_assert_str_eq (basename1 = g_path_get_basename (path1),
                               basename2 = g_path_get_basename (att->path));
     g_free(basename1);
     g_free(basename2);
-    rtcom_fail_unless_strcmp ("some file", ==, att->desc);
-    fail_unless (g_file_get_contents (att->path, &contents, &length, NULL));
-    rtcom_fail_unless_uintcmp (length, ==, strlen ("some text\n"));
-    rtcom_fail_unless_strcmp (contents, ==, "some text\n");
+    ck_assert_str_eq ("some file", att->desc);
+    ck_assert (g_file_get_contents (att->path, &contents, &length, NULL));
+    ck_assert_uint_eq (length, strlen ("some text\n"));
+    ck_assert_str_eq (contents, "some text\n");
     g_free (contents);
     rtcom_el_free_attachment (att);
 
-    fail_if (rtcom_el_attach_iter_next (att_it));
+    ck_assert (!rtcom_el_attach_iter_next (att_it));
 
     g_object_unref (att_it);
 
@@ -476,18 +476,18 @@ START_TEST(test_header)
     ev = event_new_lite ();
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     header_id = rtcom_el_add_header(
             el, event_id,
             HEADER_KEY,
             HEADER_VAL,
             NULL);
-    fail_if (header_id < 0, "Failed to add header");
+    ck_assert_msg (header_id >= 0, "Failed to add header");
 
     query = rtcom_el_query_new(el);
     if(!rtcom_el_query_prepare(
@@ -495,20 +495,21 @@ START_TEST(test_header)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, HEADER_KEY, &contents, NULL));
-    rtcom_fail_unless_strcmp(HEADER_VAL, ==, contents);
+    ck_assert(rtcom_el_iter_get_values(it, HEADER_KEY, &contents, NULL));
+    ck_assert_str_eq(HEADER_VAL, contents);
     g_free (contents);
 
-    fail_if(rtcom_el_iter_next(it), "Iterator should only return one row");
+    ck_assert_msg(!rtcom_el_iter_next(it),
+                  "Iterator should only return one row");
 
     g_object_unref(it);
     rtcom_el_event_free_contents (ev);
@@ -516,10 +517,9 @@ START_TEST(test_header)
 
     headers = rtcom_el_fetch_event_headers (el, event_id);
 
-    fail_unless (headers != NULL);
-    rtcom_fail_unless_intcmp (g_hash_table_size (headers), ==, 1);
-    rtcom_fail_unless_strcmp (g_hash_table_lookup (headers, HEADER_KEY),
-            ==, HEADER_VAL);
+    ck_assert (headers != NULL);
+    ck_assert_int_eq (g_hash_table_size (headers), 1);
+    ck_assert_str_eq (g_hash_table_lookup (headers, HEADER_KEY), HEADER_VAL);
 
     g_hash_table_destroy (headers);
 }
@@ -543,19 +543,19 @@ START_TEST(test_attach)
     gchar *basename2;
 
     ev = event_new_lite ();
-    fail_if (ev == NULL, "Failed to create event");
+    ck_assert_msg (ev != NULL, "Failed to create event");
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     attachment_id = rtcom_el_add_attachment(
             el, event_id,
             "/nonexistent", ATTACH_DESC,
             &error);
-    fail_if (attachment_id != -1, "Should have failed to add nonexistent "
+    ck_assert_msg (attachment_id == -1, "Should have failed to add nonexistent "
             "attachment");
-    rtcom_fail_unless_uintcmp (error->domain, ==, RTCOM_EL_ERROR);
-    rtcom_fail_unless_intcmp (error->code, ==, RTCOM_EL_INTERNAL_ERROR);
+    ck_assert_uint_eq (error->domain, RTCOM_EL_ERROR);
+    ck_assert_int_eq (error->code, RTCOM_EL_INTERNAL_ERROR);
     g_clear_error (&error);
 
     query = rtcom_el_query_new(el);
@@ -564,28 +564,28 @@ START_TEST(test_attach)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
     att_it = rtcom_el_iter_get_attachments(it);
-    fail_unless (att_it == NULL, "Should start with no attachments");
+    ck_assert_msg (att_it == NULL, "Should start with no attachments");
 
     g_object_unref(it);
 
     fd = g_file_open_tmp ("attachment.XXXXXX", &attach_path, NULL);
-    fail_unless (fd >= 0);
-    fail_unless (attach_path != NULL);
+    ck_assert (fd >= 0);
+    ck_assert (attach_path != NULL);
     close (fd);
-    fail_unless (g_file_set_contents (attach_path, "lalala", 6, NULL));
+    ck_assert (g_file_set_contents (attach_path, "lalala", 6, NULL));
 
     attachment_id = rtcom_el_add_attachment(
             el, event_id,
             attach_path, ATTACH_DESC,
             NULL);
-    fail_if (attachment_id < 0, "Failed to add attachment");
+    ck_assert_msg (attachment_id >= 0, "Failed to add attachment");
 
     g_unlink (attach_path);
 
@@ -595,17 +595,17 @@ START_TEST(test_attach)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless (it != NULL, "Failed to get iterator");
-    fail_unless (rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
     att_it = rtcom_el_iter_get_attachments(it);
-    fail_unless (att_it != NULL, "Failed to get attachment iterator");
+    ck_assert_msg (att_it != NULL, "Failed to get attachment iterator");
 
     /* Exercise the attachment iterator's GObject properties in a basic way */
     {
@@ -622,30 +622,30 @@ START_TEST(test_attach)
                 "sqlite3-statement", &ai_stmt,
                 NULL);
 
-        fail_unless (ai_db != NULL);
-        fail_unless (ai_db == el_db);
-        fail_unless (ai_stmt != NULL);
+        ck_assert (ai_db != NULL);
+        ck_assert (ai_db == el_db);
+        ck_assert (ai_stmt != NULL);
     }
 
-    fail_unless (rtcom_el_attach_iter_first(att_it),
-                 "Failed to start attachment iterator");
+    ck_assert_msg (rtcom_el_attach_iter_first(att_it),
+                   "Failed to start attachment iterator");
 
     att = rtcom_el_attach_iter_get (att_it);
-    fail_if (att == NULL, "failed to get attachment data");
+    ck_assert_msg (att != NULL, "failed to get attachment data");
 
-    fail_unless (event_id == att->event_id,
-                 "attachment event ID doesn't match");
-    rtcom_fail_unless_strcmp(basename1 = g_path_get_basename(attach_path), ==,
+    ck_assert_msg (event_id == att->event_id,
+                   "attachment event ID doesn't match");
+    ck_assert_str_eq(basename1 = g_path_get_basename(attach_path),
                              basename2 = g_path_get_basename(att->path));
     g_free(basename1);
     g_free(basename2);
-    rtcom_fail_unless_strcmp(ATTACH_DESC, ==, att->desc);
-    fail_unless (g_file_get_contents (att->path, &contents, &length, NULL));
-    rtcom_fail_unless_uintcmp (length, ==, 6);
-    rtcom_fail_unless_strcmp (contents, ==, "lalala");
+    ck_assert_str_eq(ATTACH_DESC, att->desc);
+    ck_assert (g_file_get_contents (att->path, &contents, &length, NULL));
+    ck_assert_uint_eq (length, 6);
+    ck_assert_str_eq (contents, "lalala");
     g_free (contents);
 
-    fail_if (rtcom_el_attach_iter_next (att_it));
+    ck_assert (!rtcom_el_attach_iter_next (att_it));
 
     g_free (attach_path);
     rtcom_el_free_attachment (att);
@@ -670,11 +670,11 @@ START_TEST(test_read)
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     /* All events are initially unread */
 
@@ -687,21 +687,21 @@ START_TEST(test_read)
                 "is-read", TRUE, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "is-read", &is_read, NULL));
-    fail_unless(is_read == TRUE, "is-read flag doesn't match");
+    ck_assert(rtcom_el_iter_get_values(it, "is-read", &is_read, NULL));
+    ck_assert_msg (is_read == TRUE, "is-read flag doesn't match");
 
     /* At this point exactly one event has is-read = TRUE */
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 1);
+    ck_assert_int_eq (count, 1);
 
     g_object_unref(it);
 
@@ -709,55 +709,53 @@ START_TEST(test_read)
      * the one we just added, plus two more) */
     query = rtcom_el_query_new (el);
     rtcom_el_query_set_limit (query, 3);
-    fail_unless (rtcom_el_query_prepare(query,
+    ck_assert (rtcom_el_query_prepare(query,
                 NULL));
     it = rtcom_el_get_events(el, query);
     g_object_unref (query);
 
-    fail_unless (it != NULL);
-    fail_unless (rtcom_el_iter_first (it));
+    ck_assert (it != NULL);
+    ck_assert (rtcom_el_iter_first (it));
     i = 0;
 
     for (i = 0; i < 3; i++)
     {
         if (i > 0)
         {
-            fail_unless (rtcom_el_iter_next (it));
+            ck_assert (rtcom_el_iter_next (it));
         }
 
-        fail_unless (rtcom_el_iter_get_values (it, "id", ids + i, NULL));
+        ck_assert (rtcom_el_iter_get_values (it, "id", ids + i, NULL));
     }
 
-    fail_if (rtcom_el_iter_next (it), "Iterator should run out after 3");
+    ck_assert_msg (!rtcom_el_iter_next (it), "Iterator should run out after 3");
 
-    rtcom_fail_unless_intcmp (ids[0], ==, event_id);
+    ck_assert_int_eq (ids[0], event_id);
 
     g_object_unref(it);
 
-    rtcom_fail_unless_intcmp (rtcom_el_set_read_events (el, ids, TRUE, NULL),
-            ==, 0);
+    ck_assert_int_eq (rtcom_el_set_read_events (el, ids, TRUE, NULL), 0);
 
     query = rtcom_el_query_new (el);
-    fail_unless (rtcom_el_query_prepare(query,
+    ck_assert (rtcom_el_query_prepare(query,
                 "is-read", TRUE, RTCOM_EL_OP_EQUAL,
                 NULL));
     it = rtcom_el_get_events(el, query);
     g_object_unref (query);
     count = iter_count_results (it);
 
-    rtcom_fail_unless_intcmp (count, ==, 3);
+    ck_assert_int_eq (count, 3);
     g_object_unref(it);
 
-    rtcom_fail_unless_intcmp (rtcom_el_set_read_events (el, ids, FALSE, NULL),
-            ==, 0);
+    ck_assert_int_eq (rtcom_el_set_read_events (el, ids, FALSE, NULL), 0);
 
     query = rtcom_el_query_new (el);
-    fail_unless (rtcom_el_query_prepare(query,
+    ck_assert (rtcom_el_query_prepare(query,
                 "is-read", TRUE, RTCOM_EL_OP_EQUAL,
                 NULL));
     it = rtcom_el_get_events(el, query);
     g_object_unref (query);
-    fail_unless (it == NULL, "all read flags should have been unset");
+    ck_assert_msg (it == NULL, "all read flags should have been unset");
 
     rtcom_el_event_free_contents (ev);
     rtcom_el_event_free (ev);
@@ -776,11 +774,11 @@ START_TEST(test_flags)
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     rtcom_el_set_event_flag(el, event_id, "RTCOM_EL_FLAG_TEST_FLAG1", NULL);
 
@@ -791,20 +789,20 @@ START_TEST(test_flags)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "flags", &flags, NULL));
+    ck_assert(rtcom_el_iter_get_values(it, "flags", &flags, NULL));
 
     test_flag1 = rtcom_el_get_flag_value(el, "RTCOM_EL_FLAG_TEST_FLAG1");
 
-    fail_if ((flags & test_flag1) == 0, "flags don't match");
+    ck_assert_msg ((flags & test_flag1) != 0, "flags don't match");
 
     g_object_unref(it);
     rtcom_el_event_free_contents (ev);
@@ -824,11 +822,11 @@ START_TEST(test_get)
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Fail to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     query = rtcom_el_query_new(el);
     if(!rtcom_el_query_prepare(
@@ -836,23 +834,23 @@ START_TEST(test_get)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
     result = rtcom_el_event_new ();
-    fail_unless (result != NULL, "failed to create result event");
+    ck_assert_msg (result != NULL, "failed to create result event");
 
-    fail_unless (rtcom_el_iter_get_full (it, result),
-                 "Failed to get event from iterator");
+    ck_assert_msg (rtcom_el_iter_get_full (it, result),
+                   "Failed to get event from iterator");
 
-    fail_unless (rtcom_el_event_equals (ev, result),
-                 "Retrieved event doesn't match created one");
+    ck_assert_msg (rtcom_el_event_equals (ev, result),
+                   "Retrieved event doesn't match created one");
 
     g_object_unref(it);
     rtcom_el_event_free_contents (result);
@@ -874,13 +872,13 @@ START_TEST(test_unique_remotes)
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     RTCOM_EL_EVENT_SET_FIELD(ev, remote_ebook_uid, g_strdup (REMOTE_EBOOK_UID));
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Fail to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     /* mikhailz: a living API horror? */
     g_free (RTCOM_EL_EVENT_GET_FIELD(ev, remote_ebook_uid));
@@ -897,7 +895,7 @@ START_TEST(test_unique_remotes)
     RTCOM_EL_EVENT_UNSET_FIELD(ev, group_uid);
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Fail to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     g_free (RTCOM_EL_EVENT_GET_FIELD(ev, remote_ebook_uid));
     g_free (RTCOM_EL_EVENT_GET_FIELD(ev, remote_uid));
@@ -912,29 +910,30 @@ START_TEST(test_unique_remotes)
     RTCOM_EL_EVENT_UNSET_FIELD(ev, group_uid);
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Fail to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     remote_ebook_uids = rtcom_el_get_unique_remote_ebook_uids(el);
-    fail_if (remote_ebook_uids == NULL, "Fail to get unique remote_ebook_uids");
+    ck_assert_msg (remote_ebook_uids != NULL,
+                   "Fail to get unique remote_ebook_uids");
 
-    fail_if (g_list_length(remote_ebook_uids) < 2,
+    ck_assert_msg (g_list_length(remote_ebook_uids) > 1,
              "remote_ebook_uids's length doesn't match");
 
     for (iter = remote_ebook_uids; iter != NULL; iter = iter->next)
         g_debug("Unique remote_ebook_uid: %s", (const guchar *) iter->data);
 
     remote_uids =  rtcom_el_get_unique_remote_uids(el);
-    fail_if (remote_uids == NULL, "Fail to get unique remote_uids");
+    ck_assert_msg (remote_uids != NULL, "Fail to get unique remote_uids");
 
-    fail_if (g_list_length(remote_uids) < 2, "remote_uids's length doesn't match");
+    ck_assert_msg (g_list_length(remote_uids) > 1, "remote_uids's length doesn't match");
 
     for (iter = remote_uids; iter != NULL; iter = iter->next)
         g_debug("Unique remote_uid: %s", (const guchar *) iter->data);
 
     remote_names = rtcom_el_get_unique_remote_names(el);
-    fail_if (remote_names == NULL, "Fail to get unique remote_names");
+    ck_assert_msg (remote_names != NULL, "Fail to get unique remote_names");
 
-    fail_if (g_list_length(remote_names) < 2,
+    ck_assert_msg (g_list_length(remote_names) > 1,
              "remote_names's length doesn't match");
 
     for (iter = remote_names; iter != NULL; iter = iter->next)
@@ -963,18 +962,18 @@ START_TEST(test_get_string)
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Fail to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     header_id = rtcom_el_add_header(
             el, event_id,
             HEADER_KEY,
             HEADER_VAL,
             NULL);
-    fail_if (header_id < 0, "Failed to add header");
+    ck_assert_msg (header_id >= 0, "Failed to add header");
 
     query = rtcom_el_query_new(el);
     if(!rtcom_el_query_prepare(
@@ -982,25 +981,26 @@ START_TEST(test_get_string)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg(it != NULL, "Failed to get iterator");
+    ck_assert_msg(rtcom_el_iter_first(it), "Failed to start iterator");
 
     bar = GUINT_TO_POINTER (0xDEADBEEF);
-    fail_if(rtcom_el_iter_get_values(it, "there is no such key", &bar, NULL),
+    ck_assert_msg(
+            !rtcom_el_iter_get_values(it, "there is no such key", &bar, NULL),
             "Shouldn't be able to get a missing value as a string");
-    fail_unless(bar == GUINT_TO_POINTER (0xDEADBEEF),
+    ck_assert_msg(bar == GUINT_TO_POINTER (0xDEADBEEF),
             "bar should be left untouched in this case");
 
-    fail_unless(rtcom_el_iter_get_values(it, HEADER_KEY,  &bar, NULL));
-    fail_if(bar == NULL);
-    fail_if(bar == GUINT_TO_POINTER (0xDEADBEEF));
-    rtcom_fail_unless_strcmp(bar, ==, HEADER_VAL);
+    ck_assert(rtcom_el_iter_get_values(it, HEADER_KEY,  &bar, NULL));
+    ck_assert (bar != NULL);
+    ck_assert (bar != GUINT_TO_POINTER (0xDEADBEEF));
+    ck_assert_str_eq(bar, HEADER_VAL);
 
     g_free(bar);
     g_object_unref(it);
@@ -1020,11 +1020,11 @@ START_TEST(test_get_int)
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Fail to add event");
+    ck_assert_msg (event_id >= 0, "Fail to add event");
 
     query = rtcom_el_query_new(el);
     if(!rtcom_el_query_prepare(
@@ -1032,18 +1032,18 @@ START_TEST(test_get_int)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "bytes-sent", &retrieved, NULL),
-            "Failed to get bytes-sent");
-    rtcom_fail_unless_intcmp(retrieved, ==, BYTES_SENT);
+    ck_assert_msg(rtcom_el_iter_get_values(it, "bytes-sent", &retrieved, NULL),
+                  "Failed to get bytes-sent");
+    ck_assert_int_eq(retrieved, BYTES_SENT);
 
     g_object_unref(it);
     rtcom_el_event_free_contents (ev);
@@ -1063,32 +1063,32 @@ START_TEST(test_ends_with)
                 "remote-name", "ve", RTCOM_EL_OP_STR_ENDS_WITH,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
+    ck_assert(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on, so Eve's recent message comes before Dave's older
      * message */
-    rtcom_fail_unless_strcmp("I am online", ==, contents);
+    ck_assert_str_eq("I am online", contents);
     g_free(contents);
 
-    fail_unless (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_next (it));
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
+    ck_assert(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
 
-    rtcom_fail_unless_strcmp("Hello from Dave", ==, contents);
+    ck_assert_str_eq("Hello from Dave", contents);
 
     g_free(contents);
 
-    fail_if (rtcom_el_iter_next (it));
+    ck_assert (!rtcom_el_iter_next (it));
 
     g_object_unref(it);
 }
@@ -1106,18 +1106,18 @@ START_TEST(test_like)
         "free-text", "%%AM oNLi%%", RTCOM_EL_OP_STR_LIKE,
         NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
+    ck_assert(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
 
-    rtcom_fail_unless_strcmp("I am online", ==, contents);
+    ck_assert_str_eq("I am online", contents);
     g_free(contents);
 
     g_object_unref(it);
@@ -1135,24 +1135,24 @@ START_TEST(test_delete_events)
 
     /* there are initially only the canned events */
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 NULL));
     it = rtcom_el_get_events (el, query);
     g_object_unref (query);
-    fail_unless (it != NULL);
-    fail_unless (RTCOM_IS_EL_ITER (it));
+    ck_assert (it != NULL);
+    ck_assert (RTCOM_IS_EL_ITER (it));
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, num_canned_events ());
+    ck_assert_int_eq (count, num_canned_events ());
     g_object_unref (it);
 
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     query = rtcom_el_query_new(el);
     if(!rtcom_el_query_prepare(
@@ -1160,13 +1160,13 @@ START_TEST(test_delete_events)
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     success = rtcom_el_delete_events(el, query, NULL);
     g_object_unref(query);
 
-    fail_unless (success, "Failed to delete stuff");
+    ck_assert_msg (success, "Failed to delete stuff");
 
     /* check that we deleted only what we wanted to delete */
 
@@ -1174,24 +1174,24 @@ START_TEST(test_delete_events)
     rtcom_el_event_free (ev);
 
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL));
     it = rtcom_el_get_events (el, query);
     g_object_unref (query);
-    fail_unless (it == NULL);
+    ck_assert (it == NULL);
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 0);
+    ck_assert_int_eq (count, 0);
 
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 NULL));
     it = rtcom_el_get_events (el, query);
     g_object_unref (query);
-    fail_unless (it != NULL);
-    fail_unless (RTCOM_IS_EL_ITER (it));
+    ck_assert (it != NULL);
+    ck_assert (RTCOM_IS_EL_ITER (it));
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, num_canned_events ());
+    ck_assert_int_eq (count, num_canned_events ());
     g_object_unref (it);
 }
 END_TEST
@@ -1209,32 +1209,32 @@ START_TEST(test_in_strv)
                 "remote-name", &interesting_people, RTCOM_EL_OP_IN_STRV,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
+    ck_assert(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on, so Dave's recent message comes before Chris's older
      * message */
 
-    rtcom_fail_unless_strcmp("Hello from Dave", ==, contents);
+    ck_assert_str_eq("Hello from Dave", contents);
 
     g_free (contents);
 
-    fail_unless (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_next (it));
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
+    ck_assert(rtcom_el_iter_get_values(it, "free-text", &contents, NULL));
 
-    rtcom_fail_unless_strcmp("Hello from Chris", ==, contents);
+    ck_assert_str_eq("Hello from Chris", contents);
 
-    fail_if (rtcom_el_iter_next (it));
+    ck_assert (!rtcom_el_iter_next (it));
 
     g_free (contents);
     g_object_unref(it);
@@ -1252,27 +1252,27 @@ START_TEST(test_delete_event)
 
     /* there are initially only the canned events */
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 NULL));
     it = rtcom_el_get_events (el, query);
     g_object_unref (query);
-    fail_unless (it != NULL);
-    fail_unless (RTCOM_IS_EL_ITER (it));
+    ck_assert (it != NULL);
+    ck_assert (RTCOM_IS_EL_ITER (it));
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, num_canned_events ());
+    ck_assert_int_eq (count, num_canned_events ());
     g_object_unref (it);
 
     ev = event_new_full (time (NULL));
     if(!ev)
     {
-        fail("Failed to create event.");
+        ck_abort_msg("Failed to create event.");
     }
 
     event_id = rtcom_el_add_event(el, ev, NULL);
-    fail_if (event_id < 0, "Failed to add event");
+    ck_assert_msg (event_id >= 0, "Failed to add event");
 
     ret = rtcom_el_delete_event(el, event_id, NULL);
-    rtcom_fail_unless_intcmp (ret, ==, 0);
+    ck_assert_int_eq (ret, 0);
 
     /* check that we deleted only what we wanted to delete */
 
@@ -1280,24 +1280,24 @@ START_TEST(test_delete_event)
     rtcom_el_event_free (ev);
 
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 "id", event_id, RTCOM_EL_OP_EQUAL,
                 NULL));
     it = rtcom_el_get_events (el, query);
     g_object_unref (query);
-    fail_unless (it == NULL);
+    ck_assert (it == NULL);
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 0);
+    ck_assert_int_eq (count, 0);
 
     query = rtcom_el_query_new(el);
-    fail_unless (rtcom_el_query_prepare (query,
+    ck_assert (rtcom_el_query_prepare (query,
                 NULL));
     it = rtcom_el_get_events (el, query);
     g_object_unref (query);
-    fail_unless (it != NULL);
-    fail_unless (RTCOM_IS_EL_ITER (it));
+    ck_assert (it != NULL);
+    ck_assert (RTCOM_IS_EL_ITER (it));
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, num_canned_events ());
+    ck_assert_int_eq (count, num_canned_events ());
     g_object_unref (it);
 }
 END_TEST
@@ -1315,31 +1315,31 @@ START_TEST(test_string_equals)
                 "remote-name", "Bob", RTCOM_EL_OP_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
-        "Failed to get values.");
+    ck_assert_msg(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
+                  "Failed to get values.");
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on, so Bob's recent message comes before his older
      * message */
 
-    rtcom_fail_unless_strcmp("Are you there?", ==, contents);
+    ck_assert_str_eq("Are you there?", contents);
     g_free(contents);
 
-    fail_unless (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_next (it));
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
-        "Failed to get values.");
+    ck_assert_msg(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
+                  "Failed to get values.");
 
-    rtcom_fail_unless_strcmp("Hi Alice", ==, contents);
+    ck_assert_str_eq("Hi Alice", contents);
     g_free(contents);
 
     g_object_unref(it);
@@ -1359,49 +1359,49 @@ START_TEST(test_int_ranges)
                 "start-time", 4000, RTCOM_EL_OP_LESS_EQUAL,
                 NULL))
     {
-        fail("Failed to prepare the query.");
+        ck_abort_msg("Failed to prepare the query.");
     }
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
-            "Failed to get values");
+    ck_assert_msg(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
+                  "Failed to get values");
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on */
 
-    rtcom_fail_unless_strcmp("Are you there?", ==, contents);
+    ck_assert_str_eq("Are you there?", contents);
     g_free(contents);
 
-    fail_unless (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_next (it));
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
-            "Failed to get values");
+    ck_assert_msg (rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
+                   "Failed to get values");
 
-    rtcom_fail_unless_strcmp("Hello from Dave", ==, contents);
+    ck_assert_str_eq("Hello from Dave", contents);
     g_free(contents);
 
-    fail_unless (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_next (it));
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
-            "Failed to get values");
+    ck_assert_msg (rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
+                   "Failed to get values");
 
-    rtcom_fail_unless_strcmp("Hello from Chris", ==, contents);
+    ck_assert_str_eq("Hello from Chris", contents);
     g_free(contents);
 
-    fail_unless (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_next (it));
 
-    fail_unless(rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
-            "Failed to get values");
+    ck_assert_msg (rtcom_el_iter_get_values(it, "free-text", &contents, NULL),
+                   "Failed to get values");
 
-    rtcom_fail_unless_strcmp("Hi Alice", ==, contents);
+    ck_assert_str_eq("Hi Alice", contents);
     g_free(contents);
 
-    fail_if (rtcom_el_iter_next (it));
+    ck_assert (!rtcom_el_iter_next (it));
 
     g_object_unref(it);
 }
@@ -1415,57 +1415,57 @@ START_TEST(test_group_by_uids)
 
     query = rtcom_el_query_new(el);
     rtcom_el_query_set_group_by (query, RTCOM_EL_QUERY_GROUP_BY_UIDS);
-    fail_unless(rtcom_el_query_prepare(query,
-                "remote-uid", "f", RTCOM_EL_OP_LESS,
-                NULL));
+    ck_assert (rtcom_el_query_prepare(query,
+               "remote-uid", "f", RTCOM_EL_OP_LESS,
+               NULL));
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on: so this is the order we'll get */
 
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("bob@example.com", ==, s);
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("bob@example.com", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("butterfly/msn/alice", ==, s);
-    g_free (s);
-
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("christine@msn.invalid", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
+    ck_assert_str_eq("butterfly/msn/alice", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("eve@example.com", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("christine@msn.invalid", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("bob@example.com", ==, s);
-    g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "free-text", &s, NULL));
-    rtcom_fail_unless_strcmp("Are you there?", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("eve@example.com", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("dave@example.com", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("bob@example.com", s);
+    g_free (s);
+    ck_assert (rtcom_el_iter_get_values (it, "free-text", &s, NULL));
+    ck_assert_str_eq("Are you there?", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("chris@example.com", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("dave@example.com", s);
+    g_free (s);
+
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("chris@example.com", s);
     g_free (s);
 
     /* Bob's first message does not appear here, because of the "group by" */
 
-    fail_if (rtcom_el_iter_next (it), "Iterator should have expired");
+    ck_assert_msg (!rtcom_el_iter_next (it), "Iterator should have expired");
 
     g_object_unref(it);
 }
@@ -1479,34 +1479,34 @@ START_TEST(test_group_by_metacontacts)
 
     query = rtcom_el_query_new(el);
     rtcom_el_query_set_group_by (query, RTCOM_EL_QUERY_GROUP_BY_CONTACT);
-    fail_unless(rtcom_el_query_prepare(query,
+    ck_assert(rtcom_el_query_prepare(query,
                 "remote-uid", "f", RTCOM_EL_OP_LESS,
                 NULL));
 
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on: so this is the order we'll get */
 
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("bob@example.com", ==, s);
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("bob@example.com", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("butterfly/msn/alice", ==, s);
-    g_free (s);
-
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("christine@msn.invalid", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
+    ck_assert_str_eq("butterfly/msn/alice", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("eve@example.com", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("christine@msn.invalid", s);
+    g_free (s);
+
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("eve@example.com", s);
     g_free (s);
 
     /* Bob's second message *does* appear here, because in the absence of an
@@ -1516,17 +1516,17 @@ START_TEST(test_group_by_metacontacts)
      * "@", but becomes more significant in protocols with a flat namespace
      * like AIM, Skype, Myspace, IRC etc.)
      */
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("bob@example.com", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("bob@example.com", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("gabble/jabber/alice", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
+    ck_assert_str_eq("gabble/jabber/alice", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("dave@example.com", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("dave@example.com", s);
     g_free (s);
 
     /* Bob's first message does not appear here, because it is grouped
@@ -1535,7 +1535,7 @@ START_TEST(test_group_by_metacontacts)
      * Christine's first message does not appear here either, because her
      * two different remote user IDs are tied together by a metacontact. */
 
-    fail_if (rtcom_el_iter_next (it), "Iterator should have expired");
+    ck_assert_msg (!rtcom_el_iter_next (it), "Iterator should have expired");
 
     g_object_unref(it);
 }
@@ -1549,7 +1549,7 @@ START_TEST(test_group_by_group)
 
     query = rtcom_el_query_new(el);
     rtcom_el_query_set_group_by (query, RTCOM_EL_QUERY_GROUP_BY_GROUP);
-    fail_unless(rtcom_el_query_prepare(query,
+    ck_assert(rtcom_el_query_prepare(query,
                 /* This will match Bob, Christine, Dave, Eve and Frank */
                 "remote-uid", "b", RTCOM_EL_OP_GREATER_EQUAL,
                 "remote-uid", "g", RTCOM_EL_OP_LESS,
@@ -1558,38 +1558,38 @@ START_TEST(test_group_by_group)
     it = rtcom_el_get_events(el, query);
     g_object_unref(query);
 
-    fail_unless(it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
 
     /* It is an API guarantee that we're sorting by event ID, which ascends
      * as time goes on: so this is the order we'll get */
 
-    fail_unless(rtcom_el_iter_first(it), "Failed to start iterator");
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("bob@example.com", ==, s);
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("bob@example.com", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("butterfly/msn/alice", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
+    ck_assert_str_eq("butterfly/msn/alice", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "group-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("group(bob)", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "group-uid", &s, NULL));
+    ck_assert_str_eq("group(bob)", s);
     g_free (s);
 
-    fail_unless (rtcom_el_iter_next (it));
-    fail_unless (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("frank@msn.invalid", ==, s);
+    ck_assert (rtcom_el_iter_next (it));
+    ck_assert (rtcom_el_iter_get_values (it, "remote-uid", &s, NULL));
+    ck_assert_str_eq("frank@msn.invalid", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("butterfly/msn/alice", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "local-uid", &s, NULL));
+    ck_assert_str_eq("butterfly/msn/alice", s);
     g_free (s);
-    fail_unless (rtcom_el_iter_get_values (it, "group-uid", &s, NULL));
-    rtcom_fail_unless_strcmp("group(chris+frank)", ==, s);
+    ck_assert (rtcom_el_iter_get_values (it, "group-uid", &s, NULL));
+    ck_assert_str_eq("group(chris+frank)", s);
     g_free (s);
 
     /* Christine's messages do not appear since Frank's is more recent.
      * Dave and Eve's messages, and Bob's XMPP message, do not appear
      * because they aren't from a groupchat. */
 
-    fail_if (rtcom_el_iter_next (it), "Iterator should have expired");
+    ck_assert_msg (!rtcom_el_iter_next (it), "Iterator should have expired");
 
     g_object_unref(it);
 }
@@ -1603,61 +1603,61 @@ START_TEST(test_update_remote_contact)
     gint count;
 
     /* We've put Bob in the address book */
-    fail_unless (rtcom_eventlogger_update_remote_contact (el,
+    ck_assert (rtcom_eventlogger_update_remote_contact (el,
                 "gabble/jabber/alice", "bob@example.com",
                 "abook-bob", "Robert", NULL));
 
     query_by_abook = rtcom_el_query_new(el);
-    fail_unless(rtcom_el_query_prepare(query_by_abook,
+    ck_assert(rtcom_el_query_prepare(query_by_abook,
                 "remote-ebook-uid", "abook-bob", RTCOM_EL_OP_EQUAL,
                 NULL));
 
     /* Now, Bob's two XMPP messages are attached to that uid */
     it = rtcom_el_get_events (el, query_by_abook);
-    fail_unless (it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 2);
+    ck_assert_int_eq (count, 2);
 
     /* Now put Bob's other identity in the address book */
-    fail_unless (rtcom_eventlogger_update_remote_contact (el,
+    ck_assert (rtcom_eventlogger_update_remote_contact (el,
                 "butterfly/msn/alice", "bob@example.com",
                 "abook-bob", "Robert", NULL));
 
     g_object_unref (it);
     it = rtcom_el_get_events (el, query_by_abook);
-    fail_unless (it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
 
     /* Bob's MSN message is attached to that uid too */
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 3);
+    ck_assert_int_eq (count, 3);
 
     g_object_unref (it);
 
     /* All three events are now marked as from Robert */
     query_by_name = rtcom_el_query_new(el);
-    fail_unless(rtcom_el_query_prepare(query_by_name,
+    ck_assert(rtcom_el_query_prepare(query_by_name,
                 "remote-name", "Robert", RTCOM_EL_OP_EQUAL,
                 NULL));
 
     it = rtcom_el_get_events (el, query_by_name);
-    fail_unless (it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 3);
+    ck_assert_int_eq (count, 3);
 
     /* When Robert is deleted from the address book, the name persists */
-    fail_unless (rtcom_eventlogger_update_remote_contact (el,
+    ck_assert (rtcom_eventlogger_update_remote_contact (el,
                 "gabble/jabber/alice", "bob@example.com",
                 NULL, "Robert", NULL));
-    fail_unless (rtcom_eventlogger_update_remote_contact (el,
+    ck_assert (rtcom_eventlogger_update_remote_contact (el,
                 "butterfly/msn/alice", "bob@example.com",
                 NULL, "Robert", NULL));
 
     g_object_unref (it);
     it = rtcom_el_get_events (el, query_by_name);
-    fail_unless (it != NULL, "Failed to get iterator");
+    ck_assert_msg (it != NULL, "Failed to get iterator");
 
     count = iter_count_results (it);
-    rtcom_fail_unless_intcmp (count, ==, 3);
+    ck_assert_int_eq (count, 3);
 
     g_object_unref (it);
 

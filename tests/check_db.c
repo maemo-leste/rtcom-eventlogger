@@ -47,22 +47,22 @@ START_TEST(db_test_db)
 
   /* Test that the open succeeds and db is initialised. */
   db = rtcom_el_db_open (fname);
-  fail_unless (db != NULL);
+  ck_assert (db != NULL);
   rtcom_el_db_close (db);
 
   db = rtcom_el_db_open (fname);
-  fail_unless (db != NULL);
+  ck_assert (db != NULL);
 
   /* Test that there are 0 events (but schema exists). */
   rtcom_el_db_exec (db, rtcom_el_db_single_int, &cnt,
       "SELECT COUNT(*) FROM Events;", NULL);
-  fail_unless (cnt == 0);
+  ck_assert (cnt == 0);
 
   /* Test that internal error is returned on invalid query. */
-  fail_if (rtcom_el_db_exec (db, NULL, NULL, "BOGUS;", &err));
-  fail_unless (err != NULL);
-  fail_unless (err->domain == RTCOM_EL_ERROR);
-  fail_unless (err->code == RTCOM_EL_INTERNAL_ERROR);
+  ck_assert (!rtcom_el_db_exec (db, NULL, NULL, "BOGUS;", &err));
+  ck_assert (err != NULL);
+  ck_assert (err->domain == RTCOM_EL_ERROR);
+  ck_assert (err->code == RTCOM_EL_INTERNAL_ERROR);
   g_error_free (err);
 
   rtcom_el_db_transaction (db, FALSE, NULL);
@@ -79,9 +79,9 @@ START_TEST(db_test_db)
   rtcom_el_db_commit (db, NULL);
 
   t = rtcom_el_db_cache_lookup_table (db, "Services");
-  fail_unless (t != NULL);
-  fail_unless (g_hash_table_size (t) == 3);
-  fail_unless (GPOINTER_TO_INT (g_hash_table_lookup (t, "Three")) == 3);
+  ck_assert (t != NULL);
+  ck_assert (g_hash_table_size (t) == 3);
+  ck_assert (GPOINTER_TO_INT (g_hash_table_lookup (t, "Three")) == 3);
   g_hash_table_destroy (t);
 
   rtcom_el_db_close (db);
@@ -108,20 +108,20 @@ _verify_column_type (gpointer data, gpointer user_data)
   dbtyp = (const gchar *) sqlite3_column_text (stmt, 2);
   if (!g_strcmp0 (dbtyp, "INTEGER"))
     {
-      fail_unless ((ctx->type == G_TYPE_INT) ||
+      ck_assert ((ctx->type == G_TYPE_INT) ||
           (ctx->type == G_TYPE_BOOLEAN));
     }
   else if (!g_strcmp0 (dbtyp, "TEXT"))
     {
-      fail_unless (ctx->type == G_TYPE_STRING);
+      ck_assert (ctx->type == G_TYPE_STRING);
     }
   else if (!g_strcmp0 (dbtyp, "BOOL"))
     {
-      fail_unless (ctx->type == G_TYPE_BOOLEAN);
+      ck_assert (ctx->type == G_TYPE_BOOLEAN);
     }
   else
     {
-      fail("Mismatched db type.");
+      ck_abort_msg ("Mismatched db type.");
     }
 }
 
@@ -135,10 +135,10 @@ START_TEST(db_test_schema)
 
   /* DB should be available as a result of test_db */
   db = rtcom_el_db_open (fname);
-  fail_unless (db != NULL);
+  ck_assert (db != NULL);
 
   rtcom_el_db_schema_get_mappings (NULL, &map, &typ);
-  fail_unless (g_hash_table_size (map) == g_hash_table_size (typ));
+  ck_assert (g_hash_table_size (map) == g_hash_table_size (typ));
 
   /* Split fields into Table.column, get schema for table and verify
    * existence and type of column. */
@@ -150,16 +150,16 @@ START_TEST(db_test_schema)
       gchar **tmp;
 
       tmp = g_strsplit (g_hash_table_lookup (map, field), ".", 2);
-      fail_unless (tmp[0] && tmp[1] && !tmp[2]);
+      ck_assert (tmp[0] && tmp[1] && !tmp[2]);
 
       ctx.field = field;
       ctx.column = tmp[1];
       ctx.type = GPOINTER_TO_UINT (g_hash_table_lookup (typ, field));
-      fail_unless (ctx.type != G_TYPE_INVALID);
+      ck_assert (ctx.type != G_TYPE_INVALID);
 
       ret = rtcom_el_db_exec_printf (db, _verify_column_type, &ctx, NULL,
           "PRAGMA table_info(%s);", tmp[0]);
-      fail_unless (ret == TRUE);
+      ck_assert (ret == TRUE);
 
       g_strfreev (tmp);
     }
@@ -175,7 +175,7 @@ _cause_mischief (gpointer data, gpointer user_data)
 {
   rtcom_el_db_t db = user_data;
 
-  fail_if (rtcom_el_db_transaction (db, TRUE, NULL));
+  ck_assert (!rtcom_el_db_transaction (db, TRUE, NULL));
 }
 
 START_TEST(db_test_events)
@@ -187,16 +187,16 @@ START_TEST(db_test_events)
   gint i;
 
   db = rtcom_el_db_open (fname);
-  fail_unless (db != NULL);
+  ck_assert (db != NULL);
 
   rtcom_el_db_schema_get_mappings (&sel, &map, &typ);
-  fail_unless (g_hash_table_size (map) == g_hash_table_size (typ));
+  ck_assert (g_hash_table_size (map) == g_hash_table_size (typ));
 
   /* First start of transaction should succeed. */
-  fail_unless (rtcom_el_db_transaction (db, FALSE, NULL));
+  ck_assert (rtcom_el_db_transaction (db, FALSE, NULL));
 
   /* Second should fail because we don't support nested transactions. */
-  fail_if (rtcom_el_db_transaction (db, FALSE, NULL));
+  ck_assert (!rtcom_el_db_transaction (db, FALSE, NULL));
 
   for (i = 0; i < 100; i++) {
     rtcom_el_db_exec (db, NULL, NULL,
@@ -209,7 +209,7 @@ START_TEST(db_test_events)
   i = 0;
   rtcom_el_db_exec (db, rtcom_el_db_single_int, &i,
       "SELECT COUNT(*) FROM Events", NULL);
-  fail_unless (i == 100);
+  ck_assert (i == 100);
 
   /* Try to start a new transaction while an existing statement
    * is ongoing. This should fail. */
@@ -219,12 +219,12 @@ START_TEST(db_test_events)
   rtcom_el_db_exec (db, NULL, NULL, "DELETE FROM Events;", NULL);
   rtcom_el_db_exec (db, rtcom_el_db_single_int, &i,
       "SELECT COUNT(*) FROM Events", NULL);
-  fail_unless (i == 0);
+  ck_assert (i == 0);
 
   /* Commit outside of transaction should fail. */
-  fail_if (rtcom_el_db_commit (db, NULL));
+  ck_assert (!rtcom_el_db_commit (db, NULL));
   /* Ditto. */
-  fail_if (rtcom_el_db_rollback (db, NULL));
+  ck_assert (!rtcom_el_db_rollback (db, NULL));
 
   rtcom_el_db_close (db);
 }

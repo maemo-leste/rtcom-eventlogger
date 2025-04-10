@@ -89,7 +89,7 @@ add_canned_events (RTComEl *el)
         RTCOM_EL_EVENT_SET_FIELD (ev, group_uid,
             g_strdup (events[i].group_uid));
 
-        fail_unless (rtcom_el_add_event (el, ev, NULL) >= 0);
+        ck_assert (rtcom_el_add_event (el, ev, NULL) >= 0);
         rtcom_el_event_free_contents (ev);
     }
 
