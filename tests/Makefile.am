@@ -10,7 +10,7 @@ rtcom_eventlogger_testsuite_SOURCES = \
 	check_el.c \
 	check_db.c \
 	fail.h
-rtcom_eventlogger_testsuite_CFLAGS = $(CHECK_FLAGS) -Wno-error=format-extra-args -Wno-error=format
+rtcom_eventlogger_testsuite_CFLAGS = $(CHECK_FLAGS)
 rtcom_eventlogger_testsuite_LDADD = \
 	$(RTCOM_EVENTLOGGER_LIBS) \
 	$(CHECK_LIBS) ${top_builddir}/src/librtcom-eventlogger.la
