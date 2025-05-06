@@ -108,7 +108,7 @@ _verify_column_type (gpointer data, gpointer user_data)
   dbtyp = (const gchar *) sqlite3_column_text (stmt, 2);
   if (!g_strcmp0 (dbtyp, "INTEGER"))
     {
-      ck_assert ((ctx->type == G_TYPE_INT) ||
+      ck_assert ((ctx->type == G_TYPE_INT) || (ctx->type == G_TYPE_INT64) ||
           (ctx->type == G_TYPE_BOOLEAN));
     }
   else if (!g_strcmp0 (dbtyp, "TEXT"))

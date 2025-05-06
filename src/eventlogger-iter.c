@@ -701,9 +701,9 @@ gboolean rtcom_el_iter_get_full (
     RTCOM_EL_EVENT_SET_FIELD(ev, event_type_id,    g_value_get_int(g_hash_table_lookup(priv->columns, "event-type-id")));
     RTCOM_EL_EVENT_SET_FIELD(ev, service,          (gchar *) g_value_dup_string(g_hash_table_lookup(priv->columns, "service")));
     RTCOM_EL_EVENT_SET_FIELD(ev, event_type,       (gchar *) g_value_dup_string(g_hash_table_lookup(priv->columns, "event-type")));
-    RTCOM_EL_EVENT_SET_FIELD(ev, storage_time,     g_value_get_int(g_hash_table_lookup(priv->columns, "storage-time")));
-    RTCOM_EL_EVENT_SET_FIELD(ev, start_time,       g_value_get_int(g_hash_table_lookup(priv->columns, "start-time")));
-    RTCOM_EL_EVENT_SET_FIELD(ev, end_time,         g_value_get_int(g_hash_table_lookup(priv->columns, "end-time")));
+    RTCOM_EL_EVENT_SET_FIELD(ev, storage_time,     g_value_get_int64(g_hash_table_lookup(priv->columns, "storage-time")));
+    RTCOM_EL_EVENT_SET_FIELD(ev, start_time,       g_value_get_int64(g_hash_table_lookup(priv->columns, "start-time")));
+    RTCOM_EL_EVENT_SET_FIELD(ev, end_time,         g_value_get_int64(g_hash_table_lookup(priv->columns, "end-time")));
     RTCOM_EL_EVENT_SET_FIELD(ev, is_read,          g_value_get_boolean(g_hash_table_lookup(priv->columns, "is-read")));
     RTCOM_EL_EVENT_SET_FIELD(ev, outgoing,         g_value_get_boolean(g_hash_table_lookup(priv->columns, "outgoing")));
     RTCOM_EL_EVENT_SET_FIELD(ev, flags,            g_value_get_int(g_hash_table_lookup(priv->columns, "flags")));

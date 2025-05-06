@@ -146,7 +146,7 @@ gboolean rtcom_el_query_refresh(
  *    RTCOM_EL_OP_EQUAL,
  *
  *    "storage-time",
- *    1324183274,
+ *    (time_t)1324183274,
  *    RTCOM_EL_OP_GREATER
  *
  *    NULL);

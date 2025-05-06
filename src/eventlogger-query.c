@@ -21,6 +21,7 @@
 
 #include <string.h>
 #include <sqlite3.h>
+#include <inttypes.h>
 
 #include "rtcom-eventlogger/db.h"
 
@@ -49,6 +50,7 @@ G_DEFINE_TYPE_WITH_PRIVATE(RTComElQuery, rtcom_el_query, G_TYPE_OBJECT);
 static gboolean _build_where_clause(
         RTComElQuery * query,
         const gchar * key,
+        gboolean is_time,
         gpointer val,
         RTComElOp op,
         GString *acc);
@@ -376,10 +378,24 @@ gboolean rtcom_el_query_prepare(
 
         while(col)
         {
-            gpointer val = va_arg(ap, gpointer);
+            gboolean is_time =
+                    !strcmp (col, "storage-time") ||
+                    !strcmp (col, "start-time") ||
+                    !strcmp (col, "end-time");
+            time_t t;
+            gpointer val;
+
+            if(is_time)
+            {
+                t = va_arg(ap, time_t);
+                val = &t;
+            } else {
+                val = va_arg(ap, gpointer);
+            }
+
             /* XXX: use of enum in va_arg is not portable */
             RTComElOp op  = va_arg(ap, RTComElOp);
-            if(!_build_where_clause (query, col, val, op, where_buf))
+            if(!_build_where_clause (query, col, is_time, val, op, where_buf))
             {
                  va_end(ap);
                  g_string_free(where_buf, TRUE);
@@ -433,6 +449,7 @@ static gboolean
 _build_where_clause(
         RTComElQuery * query,
         const gchar * key,
+        gboolean is_time,
         gpointer val,
         RTComElOp op,
         GString *ret)
@@ -453,6 +470,8 @@ _build_where_clause(
 
     expect = GPOINTER_TO_UINT (g_hash_table_lookup (priv->typing, key));
 
+    g_assert (is_time || expect != G_TYPE_INT64);
+
     switch (expect)
     {
         case G_TYPE_INT:
@@ -470,6 +489,19 @@ _build_where_clause(
                 return TRUE;
             }
 
+        case G_TYPE_INT64:
+            {
+                intmax_t int_val = *(time_t *)val;
+                const gchar *op_string = _build_operator(op);
+                if(!op_string)
+                    return FALSE;
+
+                g_string_append_printf(
+                        ret, "%s %s %" PRIiMAX,
+                        (gchar *) g_hash_table_lookup( priv->mapping, key),
+                        op_string, int_val);
+                return TRUE;
+            }
         case G_TYPE_STRING:
             {
             if(op == RTCOM_EL_OP_STR_LIKE)

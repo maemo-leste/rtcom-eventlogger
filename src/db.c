@@ -39,9 +39,9 @@ static EventField fields[] = {
   { "id", G_TYPE_INT, "Events.id" },
   { "service-id", G_TYPE_INT, "Events.service_id" },
   { "event-type-id", G_TYPE_INT, "Events.event_type_id" },
-  { "storage-time", G_TYPE_INT, "Events.storage_time" },
-  { "start-time", G_TYPE_INT, "Events.start_time" },
-  { "end-time", G_TYPE_INT, "Events.end_time" },
+  { "storage-time", G_TYPE_INT64, "Events.storage_time" },
+  { "start-time", G_TYPE_INT64, "Events.start_time" },
+  { "end-time", G_TYPE_INT64, "Events.end_time" },
   { "flags", G_TYPE_INT, "Events.flags" },
   { "is-read", G_TYPE_BOOLEAN, "Events.is_read" },
   { "bytes-sent", G_TYPE_INT, "Events.bytes_sent" },
@@ -1090,6 +1090,9 @@ rtcom_el_db_schema_update_row (rtcom_el_db_stmt_t stmt,
         {
           case G_TYPE_INT:
               g_value_set_int (val, sqlite3_column_int (stmt, i));
+              break;
+          case G_TYPE_INT64:
+              g_value_set_int64 (val, sqlite3_column_int64 (stmt, i));
               break;
           case G_TYPE_BOOLEAN:
               g_value_set_boolean (val, 0 != sqlite3_column_int (stmt, i));

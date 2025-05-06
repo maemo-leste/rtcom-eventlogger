@@ -300,9 +300,9 @@ START_TEST(test_add_event)
     }
 
     ck_assert_int_eq(t,
-            g_value_get_int(g_hash_table_lookup(values, "start-time")));
+            g_value_get_int64(g_hash_table_lookup(values, "start-time")));
     ck_assert_int_eq(t,
-            g_value_get_int(g_hash_table_lookup(values, "end-time")));
+            g_value_get_int64(g_hash_table_lookup(values, "end-time")));
 
     ck_assert_int_eq(FLAGS,
             g_value_get_int(g_hash_table_lookup(values, "flags")));
@@ -1355,8 +1355,8 @@ START_TEST(test_int_ranges)
     query = rtcom_el_query_new(el);
     if(!rtcom_el_query_prepare(
                 query,
-                "start-time", 0, RTCOM_EL_OP_GREATER,
-                "start-time", 4000, RTCOM_EL_OP_LESS_EQUAL,
+                "start-time",(time_t)0, RTCOM_EL_OP_GREATER,
+                "start-time", (time_t)4000, RTCOM_EL_OP_LESS_EQUAL,
                 NULL))
     {
         ck_abort_msg("Failed to prepare the query.");
