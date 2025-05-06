@@ -2,7 +2,9 @@
 
 # export DH_VERBOSE=1
 
+export DEB_CFLAGS_MAINT_APPEND  = -Wall -Werror
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
 DEB_CONFIGURE_EXTRA_FLAGS = --prefix=/usr --sysconfdir=/etc
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
@@ -27,11 +29,6 @@ endif
 # Disable cast checks
 ifeq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
     CFLAGS += -DG_DISABLE_CAST_CHECKS
-endif
-
-# Use soft-float and thumb mode if it enabled.
-ifneq (,$(findstring thumb,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -mthumb
 endif
 
 override_dh_auto_configure:
