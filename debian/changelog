@@ -1,3 +1,10 @@
+rtcom-eventlogger (1.6.0) unstable; urgency=low
+
+  * properly handle time_t values
+  * src/eventlogger-iter: silence deprecation warning
+
+ -- Ivaylo Dimitrov <ivo.g.dimitrov.75@gmail.com>  Tue, 06 May 2025 10:25:55 +0300
+
 rtcom-eventlogger (1.5.5) unstable; urgency=low
 
   * test: port to upstream check
