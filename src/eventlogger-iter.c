@@ -388,6 +388,8 @@ gboolean rtcom_el_iter_next(
     return TRUE;
 }
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+
 GValueArray * rtcom_el_iter_get_valuearray(
         RTComElIter * it,
         ...)
@@ -426,6 +428,8 @@ GValueArray * rtcom_el_iter_get_valuearray(
 
     return ret;
 }
+
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 GHashTable *
 rtcom_el_iter_get_value_map (RTComElIter * it, ...)
