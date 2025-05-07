@@ -1051,6 +1051,49 @@ START_TEST(test_get_int)
 }
 END_TEST
 
+START_TEST(test_get_time)
+{
+    RTComElQuery * query = NULL;
+    RTComElEvent * ev = NULL;
+    gint event_id = -1;
+    RTComElIter * it = NULL;
+    time_t retrieved;
+    time_t t = time (NULL);
+
+    ev = event_new_full (t);
+    if(!ev)
+    {
+        ck_abort_msg("Failed to create event.");
+    }
+
+    event_id = rtcom_el_add_event(el, ev, NULL);
+    ck_assert_msg (event_id >= 0, "Fail to add event");
+
+    query = rtcom_el_query_new(el);
+    if(!rtcom_el_query_prepare(
+                query,
+                "id", event_id, RTCOM_EL_OP_EQUAL,
+                NULL))
+    {
+        ck_abort_msg("Failed to prepare the query.");
+    }
+
+    it = rtcom_el_get_events(el, query);
+    g_object_unref(query);
+
+    ck_assert_msg (it != NULL, "Failed to get iterator");
+    ck_assert_msg (rtcom_el_iter_first(it), "Failed to start iterator");
+
+    ck_assert_msg(rtcom_el_iter_get_values(it, "start-time", &retrieved, NULL),
+                  "Failed to get start-time");
+    ck_assert_int_eq(retrieved, t);
+
+    g_object_unref(it);
+    rtcom_el_event_free_contents (ev);
+    rtcom_el_event_free (ev);
+}
+END_TEST
+
 START_TEST(test_ends_with)
 {
     RTComElQuery * query = NULL;
@@ -1688,6 +1731,7 @@ el_suite(void)
     tcase_add_test(tc_core, test_get);
     tcase_add_test(tc_core, test_unique_remotes);
     tcase_add_test(tc_core, test_get_int);
+    tcase_add_test(tc_core, test_get_time);
     tcase_add_test(tc_core, test_get_string);
     tcase_add_test(tc_core, test_ends_with);
     tcase_add_test(tc_core, test_like);

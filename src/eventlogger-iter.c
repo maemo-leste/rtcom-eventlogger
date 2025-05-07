@@ -510,6 +510,22 @@ rtcom_el_iter_get_values (RTComElIter * it, ...)
                 break;
               }
 
+            case G_TYPE_INT64:
+              {
+                if (!strcmp (item, "storage-time") ||
+                    !strcmp (item, "start-time") ||
+                    !strcmp (item, "end-time"))
+                  {
+                    time_t *x = va_arg (ap, time_t *);
+                    *x = g_value_get_int64 (val);
+                  } else {
+                    gint64 *x = va_arg (ap, gint64 *);
+                    *x = g_value_get_int64 (val);
+                  }
+
+                break;
+              }
+
             case G_TYPE_BOOLEAN:
               {
                 gboolean *x = va_arg (ap, gboolean *);
